@@ -1,0 +1,60 @@
+01. Electric Universe & Ace Ventura - Ancient Aum
+02. Electric Universe & Faders - Calling For Peace
+03. Electric Universe - Vibration
+04. Electric Universe - World Of Waves
+05. Electric Universe & Sitarsonic - Shiva Nataraja
+06. Electric Universe & Raja Ram - Satory
+07. Electric Universe & Mad Tribe - Party Planners 2.1
+08. Electric Universe - Forces Of Nature
+09. Electric Universe - Fractals
+10. Electric Universe - Time Bender
+11. Electric Universe - Magic Carpet
+12. Electric Universe - Himalaya
+13. Electric Universe - Mandala
+
+// Your personal YouTube video collection
+var config = new ExtractorConfig
+{
+    DefaultOutputDirectory = @"C:\Audio\",
+    MinRequestInterval = TimeSpan.FromMinutes(1), 
+    //SessionBreakMin = TimeSpan.FromMinutes(5),         // Increased
+    //SessionBreakMax = TimeSpan.FromMinutes(10),        // Increased
+    //LongBreakMin = TimeSpan.FromMinutes(20),           // Increased
+    //LongBreakMax = TimeSpan.FromMinutes(45),           // Increased
+    LongBreakChance = 0.4,                             // Increased chance
+    MaxRetries = 3
+};
+
+/*
+
+var youtubeVideos = new[]
+{
+
+    ("https://www.youtube.com/watch?v=AFyOVV8ETuw", "Fun With Declassified Nuclear Weapons Footage"),
+    ("https://www.youtube.com/watch?v=I7Db1lWzfks&list=RDI7Db1lWzfks&start_radio=1w", "wigglesDomine"),
+    ("https://www.youtube.com/watch?v=Z1_iJXZ6w1A&list=RDZ1_iJXZ6w1A&start_radio=1", "menWithoutTorts"),
+    ("https://www.youtube.com/watch?v=I3EVzLs9mSA", "unilateralphasedetractors")
+    ("https://www.youtube.com/watch?v=zrIjnrD-wX8&list=RDzrIjnrD-wX8&start_radio=1", "Astrix-Incoming"),
+    ("https://www.youtube.com/watch?v=V9fj7tIPv9k&list=RDV9fj7tIPv9k&start_radio=1", "GreenNuns-Conflict_GMS_Remix"),
+    ("https://www.youtube.com/watch?v=5dA_853Gqmw&list=RDEM6cmDSj-PXnYVOOP8djKuXQ&index=2", "GreenNuns-RingOfFire"),
+    ("https://www.youtube.com/watch?v=5dA_853Gqmw&list=RDEM6cmDSj-PXnYVOOP8djKuXQ&index=2", "Magnus-DreamMachine"),
+    ("https://www.youtube.com/watch?v=Kg57n7qeSyo&list=RDKg57n7qeSyo&start_radio=1", "Kaskade-4am"),
+    ("https://www.youtube.com/watch?v=LYXx9Kow3lc&list=RDLYXx9Kow3lc&start_radio=1", "FreakyCharka-BlackLightFantasy"),
+    ("https://www.youtube.com/watch?v=YfSMWoyqH30&list=RDYfSMWoyqH30&start_radio=1", "Magnus-EventStorm"),
+    ("https://www.youtube.com/watch?v=fEDLq1XPwgs&list=RDfEDLq1XPwgs&start_radio=1", "UlrichSchnauss-LetterFromHome"),
+    ("https://www.youtube.com/watch?v=qWVT4Dr_W4c&list=RDqWVT4Dr_W4c&start_radio=1", "FrontRaven-NightFreak"),
+    ("https://www.youtube.com/watch?v=MFNLm2RDqZY", "VericalMode-InsideYourHead"),
+    ("https://www.youtube.com/watch?v=Qfe-iLvt8XU&list=RDQfe-iLvt8XU&start_radio=1", "VerticalMode-LiveYourLife"),
+    ("https://www.youtube.com/watch?v=ZlIUf1hEJ_I&list=RDZlIUf1hEJ_I&start_radio=1", "ElectricUniverse-TimeBender"),
+    ("https://www.youtube.com/watch?v=NAxkHfHA8kg&list=RDNAxkHfHA8kg&start_radio=1", "ElectricUniverse-Lakshmi"),
+    ("https://www.youtube.com/watch?v=Dge7x_kPZLg&list=RDDge7x_kPZLg&index=2", "ElectricUniversse-AcientAum"),
+    ("https://www.youtube.com/watch?v=bOrIJbRFVuI&list=RDDge7x_kPZLg&index=3", "AceVentura-Genesis"),
+    ("https://www.youtube.com/watch?v=Z5F1jPrvUHQ&list=RDZ5F1jPrvUHQ&start_radio=1", "ElectricUniverse-SacredGeometry"),
+    ("https://www.youtube.com/watch?v=dHI7XIelQ98&list=RDdHI7XIelQ98&start_radio=1", "SonicEntity-LCF"),
+    ("https://www.youtube.com/watch?v=B6orKcR-6aQ&list=RDB6orKcR-6aQ&start_radio=1", "VericalMode-HumanExperience"),
+    ("https://www.youtube.com/watch?v=Naf5uJYGoiU&list=RDNaf5uJYGoiU&index=2", "BeastieBoys-HeyLadies"),
+    ("https://www.youtube.com/watch?v=Z6gPSSYxex0&list=RDZ6gPSSYxex0&start_radio=1", "NegativLand-U2"),
+    ("https://www.youtube.com/watch?v=CiXNIjGX1hY&list=RDCiXNIjGX1hY&start_radio=1", "DavidGilmour-Shine(Pompeii)"),
+    ("https://www.youtube.com/watch?v=LH0-WXUFY2k&list=RDLH0-WXUFY2k&start_radio=1", "LeveeBreaks")
+};
+*/
