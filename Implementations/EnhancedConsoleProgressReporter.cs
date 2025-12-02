@@ -19,7 +19,7 @@ namespace VideoAudioExtractor.Implementations
         private readonly Stopwatch _totalStopwatch = Stopwatch.StartNew();
         protected Timer? _updateTimer;
         private bool _disposed = false;
-        private bool _suppressOutput = false;
+        public bool _suppressOutput = false;
 
         // New field to track the console line where "Starting ..." was printed
         private int _lastVideoLine = -1;

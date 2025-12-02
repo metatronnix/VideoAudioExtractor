@@ -86,7 +86,7 @@ public class ExtractorConfig
     public TimeSpan LongBreakMin { get; set; } = TimeSpan.FromMinutes(10);
     public TimeSpan LongBreakMax { get; set; } = TimeSpan.FromMinutes(30);
     public double LongBreakChance { get; set; } = 0.25;
-    public int MaxFileNameLength { get; set; } = 100;
+    public int MaxFileNameLength { get; set; } = 300;
     public string DefaultOutputDirectory { get; set; } = @"C:\Audio\";
     public int MaxRetries { get; set; } = 3;
     public TimeSpan HttpTimeout { get; set; } = TimeSpan.FromMinutes(10);
