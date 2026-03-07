@@ -361,3 +361,21 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Audio/video files
+*.flac
+*.mp3
+*.wav
+*.aac
+*.ogg
+*.wma
+*.m4a
+*.webm
+*.mp4
+*.avi
+*.mkv
+
+# Spreadsheets
+*.xlsx
+*.xls
+*.csv
