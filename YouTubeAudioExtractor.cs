@@ -95,24 +95,26 @@ public class YouTubeAudioExtractor : IDisposable
     }
     private string Sanitize(string s)
     {
-        _progressReporter.ReportInfo($"Sanitize input: '{s}' (length: {s.Length})");
-        _progressReporter.ReportInfo($"MaxFileNameLength config: {_config.MaxFileNameLength}");
+        //_progressReporter.ReportInfo($"Sanitize input: '{s}' (length: {s.Length})");
+        //_progressReporter.ReportInfo($"MaxFileNameLength config: {_config.MaxFileNameLength}");
 
         var original = s;
         foreach (var c in Path.GetInvalidFileNameChars())
         {
             if (s.Contains(c))
             {
-                _progressReporter.ReportInfo($"Replacing invalid char: '{c}'");
+                //_progressReporter.ReportInfo($"Replacing invalid char: '{c}'");
                 s = s.Replace(c, '_');
             }
         }
 
+        /*
         if (s != original)
-            _progressReporter.ReportInfo($"After invalid char replacement: '{s}'");
+           _progressReporter.ReportInfo($"After invalid char replacement: '{s}'");
+        */
 
         var result = s[..Math.Min(s.Length, _config.MaxFileNameLength)];
-        _progressReporter.ReportInfo($"Sanitize output: '{result}' (length: {result.Length})");
+        //_progressReporter.ReportInfo($"Sanitize output: '{result}' (length: {result.Length})");
 
         return result;
     }
@@ -125,8 +127,10 @@ public class YouTubeAudioExtractor : IDisposable
         var outputTemplate = Path.Combine(_config.DefaultOutputDirectory, "%(id)s.%(ext)s");
 
         var args = new StringBuilder()
+            .Append("--js-runtime node ")               // NEW: force yt‑dlp to use Node")
             .Append("-f bestaudio/bestaudio* ")
             .Append("--extract-audio --audio-format flac --audio-quality 0 ")
+            .Append("--postprocessor-args \"ffmpeg:-sample_fmt s32\" ")
             .Append("--add-metadata --embed-metadata ")
             .Append("--write-info-json --write-description ")
             .Append("--no-playlist --ignore-errors ")
@@ -173,9 +177,10 @@ public class YouTubeAudioExtractor : IDisposable
             Directory.CreateDirectory(dir);
             var baseFile = Path.GetFileNameWithoutExtension(outputPath);
 
+            /*
             _progressReporter.ReportInfo($"▶ Extracting: {url}");
             _progressReporter.ReportProgress("Preparing download...");
-
+            */
             await DeleteExistingFilesAsync(dir, baseFile);
             var args = await GetCachedArgumentsAsync(url);
 
@@ -234,39 +239,56 @@ public class YouTubeAudioExtractor : IDisposable
             _progressReporter.ReportInfo($"Original FLAC path: {flac}");
             _progressReporter.ReportInfo($"BaseFile: {baseFile}");
             _progressReporter.ReportInfo($"Metadata loaded: {result.Metadata != null}");
-            */
+       
 
             if (result.Metadata != null)
             {
                 _progressReporter.ReportInfo($"Metadata Artist: '{result.Metadata.Artist}'");
                 _progressReporter.ReportInfo($"Metadata Title: '{result.Metadata.Title}'");
             }
+            */
 
             var name = CreateFileNameFromMetadata(result.Metadata, baseFile);
-            _progressReporter.ReportInfo($"Generated name: '{name}'");
+            //_progressReporter.ReportInfo($"Generated name: '{name}'");
 
             var newPath = Path.Combine(dir, $"{name}.flac");
-            _progressReporter.ReportInfo($"New path: {newPath}");
+            //_progressReporter.ReportInfo($"New path: {newPath}");
 
-            _progressReporter.ReportInfo($"Paths equal (ignore case): {string.Equals(flac, newPath, StringComparison.OrdinalIgnoreCase)}");
+            //_progressReporter.ReportInfo($"Paths equal (ignore case): {string.Equals(flac, newPath, StringComparison.OrdinalIgnoreCase)}");
 
             if (!string.Equals(flac, newPath, StringComparison.OrdinalIgnoreCase))
             {
-                _progressReporter.ReportInfo("Paths are different, attempting rename...");
+                //_progressReporter.ReportInfo("Paths are different, attempting rename...");
 
                 if (File.Exists(newPath))
                 {
-                    _progressReporter.ReportInfo($"Target file exists, deleting: {newPath}");
+                   // _progressReporter.ReportInfo($"Target file exists, deleting: {newPath}");
                     File.Delete(newPath);
                 }
 
-                _progressReporter.ReportInfo($"Moving file from '{flac}' to '{newPath}'");
+              //  _progressReporter.ReportInfo($"Moving file from '{flac}' to '{newPath}'");
                 File.Move(flac, newPath);
                 result.OutputPath = newPath;
-                _progressReporter.ReportInfo("File move completed successfully");
+             //   _progressReporter.ReportInfo("File move completed successfully");
             }
           
             result.Name = Path.GetFileNameWithoutExtension(result.OutputPath);
+
+            // Re-encode to true FLAC if the file contains a different codec
+            if (!IsRealFlac(result.OutputPath))
+            {
+                _progressReporter.ReportInfo($"Re-encoding to true FLAC: {result.Name}");
+                ReencodeToFlac(result.OutputPath);
+                result.FileSizeBytes = new FileInfo(result.OutputPath).Length;
+            }
+
+            // Calculate BPM and append to filename
+            result.OutputPath = AppendBpmToFileName(result.OutputPath);
+            result.Name = Path.GetFileNameWithoutExtension(result.OutputPath);
+
+            // Tag artist from filename if it matches "Artist - Title"
+            TagArtistFromFileName(result.OutputPath, result.Name);
+
             result.Success = true;
 
             // Clean up metadata files
@@ -310,9 +332,11 @@ public class YouTubeAudioExtractor : IDisposable
 
             // Temporarily disable output suppression for debug
                 enhanced._suppressOutput = false; 
-            
+           
+            /*
             _progressReporter.ReportInfo($"URL: {url}");
             _progressReporter.ReportInfo($"Output path: {outPath}");
+            */
 
             var res = await ExtractAudioWithMetadataAsync(url, outPath);
 
@@ -343,7 +367,7 @@ public class YouTubeAudioExtractor : IDisposable
                     if (line.Contains("SABR") || line.Contains("Server‑Side Ad Placement"))
                         continue; // ignore SABR experiment warnings
 
-                    _progressReporter.ReportInfo($"yt‑dlp → {line}");
+                    //_progressReporter.ReportInfo($"yt‑dlp → {line}");
 
                     if (line.Contains("[download]") &&
                         _progressReporter is EnhancedConsoleProgressReporter r)
@@ -386,7 +410,7 @@ public class YouTubeAudioExtractor : IDisposable
                     Path.GetFileNameWithoutExtension(f).Equals(baseName, StringComparison.OrdinalIgnoreCase))
                 {
                     File.Delete(f);
-                    _progressReporter.ReportInfo($"🗑️ Deleted old file: {Path.GetFileName(f)}");
+                    //_progressReporter.ReportInfo($"🗑️ Deleted old file: {Path.GetFileName(f)}");
                 }
             }
             await Task.Delay(500);
@@ -409,11 +433,11 @@ public class YouTubeAudioExtractor : IDisposable
 
             if (info == null)
             {
-                _progressReporter.ReportError($"No .info.json file found for video ID: {videoId}");
+             //   _progressReporter.ReportError($"No .info.json file found for video ID: {videoId}");
                 return null;
             }
 
-            _progressReporter.ReportInfo($"Found metadata file: {Path.GetFileName(info)}");
+           // _progressReporter.ReportInfo($"Found metadata file: {Path.GetFileName(info)}");
 
             var json = await File.ReadAllTextAsync(info);
             var root = JsonDocument.Parse(json).RootElement;
@@ -445,7 +469,7 @@ public class YouTubeAudioExtractor : IDisposable
                 Duration = root.TryGetProperty("duration", out var d) ? TimeSpan.FromSeconds(d.GetDouble()) : null
             };
 
-            _progressReporter.ReportInfo($"Loaded metadata - Artist: '{m.Artist}', Title: '{m.Title}'");
+            //_progressReporter.ReportInfo($"Loaded metadata - Artist: '{m.Artist}', Title: '{m.Title}'");
             return m;
         }
         catch (Exception ex)
@@ -536,37 +560,38 @@ public class YouTubeAudioExtractor : IDisposable
 
     private string CreateFileNameFromMetadata(VideoMetadata? m, string fallback)
     {
+        /*
         _progressReporter.ReportInfo($"=== FILENAME DEBUG START ===");
         _progressReporter.ReportInfo($"Fallback: '{fallback}'");
         _progressReporter.ReportInfo($"MaxFileNameLength: {_config.MaxFileNameLength}");
-
+        */
         if (m == null)
         {
-            _progressReporter.ReportInfo("Metadata is null, using fallback");
+            //_progressReporter.ReportInfo("Metadata is null, using fallback");
             var result = Sanitize(fallback);
-            _progressReporter.ReportInfo($"Final result: '{result}'");
-            _progressReporter.ReportInfo($"=== FILENAME DEBUG END ===");
+            //_progressReporter.ReportInfo($"Final result: '{result}'");
+            //_progressReporter.ReportInfo($"=== FILENAME DEBUG END ===");
             return result;
         }
 
-        _progressReporter.ReportInfo($"Metadata Artist: '{m.Artist}'");
-        _progressReporter.ReportInfo($"Metadata Title: '{m.Title}'");
+        //_progressReporter.ReportInfo($"Metadata Artist: '{m.Artist}'");
+        //_progressReporter.ReportInfo($"Metadata Title: '{m.Title}'");
 
         var artist = m.Artist ?? "Unknown Artist";
         var title = m.Title ?? fallback;
 
-        _progressReporter.ReportInfo($"Final Artist: '{artist}'");
-        _progressReporter.ReportInfo($"Final Title: '{title}'");
+        //_progressReporter.ReportInfo($"Final Artist: '{artist}'");
+        //_progressReporter.ReportInfo($"Final Title: '{title}'");
 
         var name = !string.IsNullOrWhiteSpace(artist) && !string.IsNullOrWhiteSpace(title)
             ? $"{artist} - {title}"
             : title;
 
-        _progressReporter.ReportInfo($"Constructed name: '{name}' (length: {name.Length})");
+        //_progressReporter.ReportInfo($"Constructed name: '{name}' (length: {name.Length})");
 
         var sanitized = Sanitize(name);
-        _progressReporter.ReportInfo($"After Sanitize: '{sanitized}' (length: {sanitized.Length})");
-        _progressReporter.ReportInfo($"=== FILENAME DEBUG END ===");
+        //_progressReporter.ReportInfo($"After Sanitize: '{sanitized}' (length: {sanitized.Length})");
+        //_progressReporter.ReportInfo($"=== FILENAME DEBUG END ===");
 
         return sanitized;
     }
@@ -582,7 +607,7 @@ public class YouTubeAudioExtractor : IDisposable
             foreach (var file in filesToDelete)
             {
                 File.Delete(file);
-                _progressReporter.ReportInfo($"🗑️ Deleted: {Path.GetFileName(file)}");
+               // _progressReporter.ReportInfo($"🗑️ Deleted: {Path.GetFileName(file)}");
             }
 
             await Task.Delay(100); // Brief pause to ensure file system operations complete
@@ -591,6 +616,125 @@ public class YouTubeAudioExtractor : IDisposable
         {
             _progressReporter.ReportError($"Cleanup warning: {ex.Message}");
             // Don't throw - cleanup failure shouldn't stop the main process
+        }
+    }
+
+    private bool IsRealFlac(string filePath)
+    {
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffprobe",
+                    Arguments = $"-v error -show_entries stream=codec_name -of csv=p=0 \"{filePath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                if (line.Trim().Equals("flac", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void ReencodeToFlac(string filePath)
+    {
+        var tempPath = filePath + ".tmp.flac";
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "ffmpeg",
+                    Arguments = $"-i \"{filePath}\" -vn -c:a flac -sample_fmt s32 -y \"{tempPath}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+            process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode == 0 && System.IO.File.Exists(tempPath))
+            {
+                System.IO.File.Delete(filePath);
+                System.IO.File.Move(tempPath, filePath);
+            }
+            else
+            {
+                _progressReporter.ReportError($"Re-encoding failed for {Path.GetFileName(filePath)}");
+                if (System.IO.File.Exists(tempPath))
+                    System.IO.File.Delete(tempPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _progressReporter.ReportError($"Re-encoding error: {ex.Message}");
+            if (System.IO.File.Exists(tempPath))
+                System.IO.File.Delete(tempPath);
+        }
+    }
+
+    private string AppendBpmToFileName(string filePath)
+    {
+        try
+        {
+            var bpmCalc = new VideoAudioExtractor.BPMCalculator();
+            var bpm = (int)bpmCalc.CalculateBPM(filePath);
+            _progressReporter.ReportInfo($"BPM detected: {bpm}");
+
+            var dir = Path.GetDirectoryName(filePath)!;
+            var name = Path.GetFileNameWithoutExtension(filePath);
+            var newPath = Path.Combine(dir, $"{name} - {bpm}.flac");
+
+            if (File.Exists(newPath))
+                File.Delete(newPath);
+
+            File.Move(filePath, newPath);
+            return newPath;
+        }
+        catch (Exception ex)
+        {
+            _progressReporter.ReportError($"BPM detection error: {ex.Message}");
+            return filePath;
+        }
+    }
+
+    private void TagArtistFromFileName(string filePath, string fileName)
+    {
+        var dashIndex = fileName.IndexOf(" - ");
+        if (dashIndex <= 0) return;
+
+        var artist = fileName[..dashIndex].Trim();
+        try
+        {
+            using var tagFile = TagLib.File.Create(filePath);
+            tagFile.Tag.AlbumArtists = new[] { artist };
+            tagFile.Tag.Performers = new[] { artist };
+            tagFile.Save();
+        }
+        catch (Exception ex)
+        {
+            _progressReporter.ReportError($"Tagging error: {ex.Message}");
         }
     }
 
