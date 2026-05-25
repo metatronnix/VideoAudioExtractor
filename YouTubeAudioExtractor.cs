@@ -38,13 +38,21 @@ public class YouTubeAudioExtractor : IDisposable
 
         _httpClient = new HttpClient { Timeout = _config.HttpTimeout };
 
-        _ytDlpPath = YtDlpInstaller.FindYtDlpPath() ?? "yt-dlp";
-        _useShellExecution = string.IsNullOrEmpty(YtDlpInstaller.FindYtDlpPath());
-
-        if (_useShellExecution)
+        if (!string.IsNullOrWhiteSpace(_config.YtDlpPath))
         {
-            _ytDlpPath = "yt-dlp";
-            _progressReporter.ReportInfo("Using shell execution mode for yt‑dlp.");
+            _ytDlpPath = _config.YtDlpPath;
+            _useShellExecution = false;
+        }
+        else
+        {
+            _ytDlpPath = YtDlpInstaller.FindYtDlpPath() ?? "yt-dlp";
+            _useShellExecution = string.IsNullOrEmpty(YtDlpInstaller.FindYtDlpPath());
+
+            if (_useShellExecution)
+            {
+                _ytDlpPath = "yt-dlp";
+                _progressReporter.ReportInfo("Using shell execution mode for yt‑dlp.");
+            }
         }
 
         SetupHttpClient();
@@ -123,11 +131,9 @@ public class YouTubeAudioExtractor : IDisposable
     private async Task<string> BuildYtDlpArgumentsAsync(string url)
     {
         var ua = _userAgents[_random.Next(_userAgents.Length)];
-        var cookieArg = "--cookies \"C:\\Audio\\youtube_cookies.txt\"";
         var outputTemplate = Path.Combine(_config.DefaultOutputDirectory, "%(id)s.%(ext)s");
 
         var args = new StringBuilder()
-            .Append("--js-runtime node ")               // NEW: force yt‑dlp to use Node")
             .Append("-f bestaudio/bestaudio* ")
             .Append("--extract-audio --audio-format flac --audio-quality 0 ")
             .Append("--postprocessor-args \"ffmpeg:-sample_fmt s32\" ")
@@ -136,12 +142,21 @@ public class YouTubeAudioExtractor : IDisposable
             .Append("--no-playlist --ignore-errors ")
             .Append("--sleep-interval 5 --max-sleep-interval 15 ")
             .Append("--throttled-rate 100K --extractor-retries 5 --retry-sleep 10 ")
-            .Append("--concurrent-fragments 5 ")
-            .Append($"{cookieArg} ")
-            .Append($"--user-agent \"{ua}\" ")
-            .Append($"--output \"{outputTemplate}\" ")
-            .Append("--ffmpeg-location \"C:\\ffmpeg\\bin\" ")
-            .Append("\"").Append(url).Append("\"");
+            .Append("--concurrent-fragments 5 ");
+
+        if (!string.IsNullOrWhiteSpace(_config.CookiesFile) && File.Exists(_config.CookiesFile))
+            args.Append($"--cookies \"{_config.CookiesFile}\" ");
+
+        args.Append($"--user-agent \"{ua}\" ")
+            .Append($"--output \"{outputTemplate}\" ");
+
+        var ffmpegDir = !string.IsNullOrWhiteSpace(_config.FfmpegLocation)
+            ? _config.FfmpegLocation
+            : (!string.IsNullOrWhiteSpace(_config.FfmpegPath) ? Path.GetDirectoryName(_config.FfmpegPath) : null);
+        if (!string.IsNullOrWhiteSpace(ffmpegDir) && Directory.Exists(ffmpegDir))
+            args.Append($"--ffmpeg-location \"{ffmpegDir}\" ");
+
+        args.Append("\"").Append(url).Append("\"");
 
         await Task.Yield();
         return args.ToString();
@@ -187,7 +202,7 @@ public class YouTubeAudioExtractor : IDisposable
             /*
             _progressReporter.ReportInfo($"yt‑dlp path: {_ytDlpPath}");
             _progressReporter.ReportInfo($"yt‑dlp args: {args}");
-            _progressReporter.ReportInfo($"ffmpeg location: C:\\ffmpeg\\bin");
+            _progressReporter.ReportInfo($"ffmpeg location: {_config.FfmpegLocation ?? "(PATH)"}");
             _progressReporter.ReportInfo($"Output dir: {_config.DefaultOutputDirectory}");
             */
 
@@ -281,10 +296,6 @@ public class YouTubeAudioExtractor : IDisposable
                 ReencodeToFlac(result.OutputPath);
                 result.FileSizeBytes = new FileInfo(result.OutputPath).Length;
             }
-
-            // Calculate BPM and append to filename
-            result.OutputPath = AppendBpmToFileName(result.OutputPath);
-            result.Name = Path.GetFileNameWithoutExtension(result.OutputPath);
 
             // Tag artist from filename if it matches "Artist - Title"
             TagArtistFromFileName(result.OutputPath, result.Name);
@@ -627,7 +638,7 @@ public class YouTubeAudioExtractor : IDisposable
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffprobe",
+                    FileName = _config.FfprobePath ?? "ffprobe",
                     Arguments = $"-v error -show_entries stream=codec_name -of csv=p=0 \"{filePath}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -662,7 +673,7 @@ public class YouTubeAudioExtractor : IDisposable
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "ffmpeg",
+                    FileName = _config.FfmpegPath ?? "ffmpeg",
                     Arguments = $"-i \"{filePath}\" -vn -c:a flac -sample_fmt s32 -y \"{tempPath}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
@@ -694,33 +705,9 @@ public class YouTubeAudioExtractor : IDisposable
         }
     }
 
-    private string AppendBpmToFileName(string filePath)
-    {
-        try
-        {
-            var bpmCalc = new VideoAudioExtractor.BPMCalculator();
-            var bpm = (int)bpmCalc.CalculateBPM(filePath);
-            _progressReporter.ReportInfo($"BPM detected: {bpm}");
-
-            var dir = Path.GetDirectoryName(filePath)!;
-            var name = Path.GetFileNameWithoutExtension(filePath);
-            var newPath = Path.Combine(dir, $"{name} - {bpm}.flac");
-
-            if (File.Exists(newPath))
-                File.Delete(newPath);
-
-            File.Move(filePath, newPath);
-            return newPath;
-        }
-        catch (Exception ex)
-        {
-            _progressReporter.ReportError($"BPM detection error: {ex.Message}");
-            return filePath;
-        }
-    }
-
     private void TagArtistFromFileName(string filePath, string fileName)
     {
+        // Filename format: "Artist - BPM - Title" or "Artist - Title"
         var dashIndex = fileName.IndexOf(" - ");
         if (dashIndex <= 0) return;
 
@@ -730,6 +717,7 @@ public class YouTubeAudioExtractor : IDisposable
             using var tagFile = TagLib.File.Create(filePath);
             tagFile.Tag.AlbumArtists = new[] { artist };
             tagFile.Tag.Performers = new[] { artist };
+            tagFile.Tag.Title = fileName;
             tagFile.Save();
         }
         catch (Exception ex)

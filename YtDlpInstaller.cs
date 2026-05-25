@@ -104,23 +104,33 @@ public static class YtDlpInstaller
 
     public static async Task<string?> FindYtDlpManuallyAsync()
     {
-        var searchLocations = new[]
-        {
-            @"C:\Program Files\yt-dlp",
-            @"C:\Program Files (x86)\yt-dlp",
-            @"C:\Tools\yt-dlp",
-            @"C:\yt-dlp",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "yt-dlp"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "yt-dlp"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "yt-dlp"),
-            // Python Scripts directories
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python311", "Scripts"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python312", "Scripts"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python313", "Scripts"),
-            @"C:\Python311\Scripts",
-            @"C:\Python312\Scripts",
-            @"C:\Python313\Scripts",
-        };
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var searchLocations = OperatingSystem.IsWindows()
+            ? new[]
+            {
+                @"C:\Program Files\yt-dlp",
+                @"C:\Program Files (x86)\yt-dlp",
+                @"C:\Tools\yt-dlp",
+                @"C:\yt-dlp",
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "yt-dlp"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "yt-dlp"),
+                Path.Combine(home, "yt-dlp"),
+                // Python Scripts directories
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python311", "Scripts"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python312", "Scripts"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Python", "Python313", "Scripts"),
+                @"C:\Python311\Scripts",
+                @"C:\Python312\Scripts",
+                @"C:\Python313\Scripts",
+            }
+            : new[]
+            {
+                "/opt/homebrew/bin",   // Homebrew on Apple Silicon
+                "/usr/local/bin",      // Homebrew on Intel macOS / common Linux
+                "/usr/bin",
+                Path.Combine(home, ".local", "bin"),
+                Path.Combine(home, "bin"),
+            };
 
         var executableNames = new[] { "yt-dlp.exe", "yt-dlp" };
 
@@ -245,11 +255,19 @@ public static class YtDlpInstaller
     {
         Console.WriteLine("\n🔧 Manual Setup Instructions:");
         Console.WriteLine("=============================");
-        Console.WriteLine("Please run this command in Command Prompt to find yt-dlp:");
-        Console.WriteLine("   where yt-dlp");
-        Console.WriteLine();
-        Console.WriteLine("Then update your code with the full path, for example:");
-        Console.WriteLine("   _ytDlpPath = @\"C:\\Users\\YourName\\AppData\\Local\\Programs\\Python\\Python311\\Scripts\\yt-dlp.exe\";");
+        if (OperatingSystem.IsWindows())
+        {
+            Console.WriteLine("yt-dlp was not found. Install it (e.g. `winget install yt-dlp` or `pip install yt-dlp`),");
+            Console.WriteLine("then confirm it's on your PATH with:");
+            Console.WriteLine("   where yt-dlp");
+        }
+        else
+        {
+            Console.WriteLine("yt-dlp was not found. Install it with Homebrew (macOS) or your package manager:");
+            Console.WriteLine("   brew install yt-dlp ffmpeg");
+            Console.WriteLine("then confirm it's on your PATH with:");
+            Console.WriteLine("   which yt-dlp");
+        }
     }
 
     // Synchronous version

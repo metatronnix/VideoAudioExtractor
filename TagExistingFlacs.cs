@@ -9,7 +9,7 @@ public class TagExistingFlacs
     {
         var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         var flacFiles = Directory.GetFiles(audioDir, "*.flac", searchOption);
-        int tagged = 0, skipped = 0, errors = 0, reencoded = 0, bpmAdded = 0;
+        int tagged = 0, skipped = 0, errors = 0, reencoded = 0;
 
         Console.WriteLine($"Found {flacFiles.Length} FLAC files in {audioDir}");
         Console.WriteLine();
@@ -43,27 +43,12 @@ public class TagExistingFlacs
                 reencoded++;
             }
 
-            // Strip old BPM suffix if present, then recalculate
-            if (HasBpmSuffix(filePath))
-            {
-                filePath = StripBpmSuffix(filePath);
-                baseName = Path.GetFileNameWithoutExtension(filePath);
-            }
-
-            var bpmPath = AppendBpm(filePath);
-            if (bpmPath != null)
-            {
-                filePath = bpmPath;
-                baseName = Path.GetFileNameWithoutExtension(filePath);
-                artist = baseName[..baseName.IndexOf(" - ")].Trim();
-                bpmAdded++;
-            }
-
             try
             {
                 using var tagFile = TagLib.File.Create(filePath);
                 tagFile.Tag.AlbumArtists = new[] { artist };
                 tagFile.Tag.Performers = new[] { artist };
+                tagFile.Tag.Title = baseName;
                 tagFile.Save();
                 Console.WriteLine($"  Tagged: {baseName}  ->  Artist: {artist}");
                 tagged++;
@@ -76,56 +61,7 @@ public class TagExistingFlacs
         }
 
         Console.WriteLine();
-        Console.WriteLine($"Tagging complete: {tagged} tagged, {reencoded} re-encoded, {bpmAdded} BPM added, {skipped} skipped, {errors} errors.");
-    }
-
-    private static bool HasBpmSuffix(string filePath)
-    {
-        var name = Path.GetFileNameWithoutExtension(filePath);
-        var lastDash = name.LastIndexOf(" - ");
-        if (lastDash < 0) return false;
-        var suffix = name[(lastDash + 3)..].Trim();
-        return int.TryParse(suffix, out _);
-    }
-
-    private static string StripBpmSuffix(string filePath)
-    {
-        var dir = Path.GetDirectoryName(filePath)!;
-        var name = Path.GetFileNameWithoutExtension(filePath);
-        var lastDash = name.LastIndexOf(" - ");
-        var stripped = name[..lastDash];
-        var newPath = Path.Combine(dir, $"{stripped}.flac");
-
-        if (File.Exists(newPath) && !string.Equals(filePath, newPath, StringComparison.OrdinalIgnoreCase))
-            File.Delete(newPath);
-
-        File.Move(filePath, newPath);
-        return newPath;
-    }
-
-    private static string? AppendBpm(string filePath)
-    {
-        try
-        {
-            var calc = new BPMCalculator();
-            var bpm = (int)calc.CalculateBPM(filePath);
-
-            var dir = Path.GetDirectoryName(filePath)!;
-            var name = Path.GetFileNameWithoutExtension(filePath);
-            var newPath = Path.Combine(dir, $"{name} - {bpm}.flac");
-
-            if (File.Exists(newPath))
-                File.Delete(newPath);
-
-            File.Move(filePath, newPath);
-            Console.WriteLine($"  BPM: {name} -> {bpm}");
-            return newPath;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"  BPM error for {Path.GetFileNameWithoutExtension(filePath)}: {ex.Message}");
-            return null;
-        }
+        Console.WriteLine($"Tagging complete: {tagged} tagged, {reencoded} re-encoded, {skipped} skipped, {errors} errors.");
     }
 
     private static bool IsRealFlac(string filePath)
