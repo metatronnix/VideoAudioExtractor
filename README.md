@@ -8,18 +8,19 @@ Runs on **Windows** and **macOS/Linux**.
 
 ## Prerequisites
 
-The app shells out to two external tools — `yt-dlp` and `ffmpeg`/`ffprobe`. **You do
+The app shells out to external tools — `yt-dlp`, `ffmpeg`/`ffprobe`, and `deno`
+(a JavaScript runtime that current `yt-dlp` requires for YouTube extraction). **You do
 not have to install them manually:** on first run the app resolves each tool in this
 order and downloads it if needed:
 
 1. Found on your `PATH` → used as-is
 2. Previously downloaded to the tools cache → reused
-3. Otherwise downloaded automatically (`yt-dlp` from GitHub releases, `ffmpeg`/
-   `ffprobe` from [ffbinaries](https://ffbinaries.com/)) into
+3. Otherwise downloaded automatically (`yt-dlp` and `deno` from GitHub releases,
+   `ffmpeg`/`ffprobe` from [ffbinaries](https://ffbinaries.com/)) into
    `%LOCALAPPDATA%\VideoAudioExtractor\tools` (Windows) or
    `~/.local/share/VideoAudioExtractor/tools` (macOS/Linux)
 
-> Node.js is **not** required.
+> Node.js is **not** required — Deno is used as the JS runtime instead.
 
 So the only hard requirement depends on how you run the app:
 
@@ -36,13 +37,14 @@ Silicon instead of the x86_64 ffbinaries build under Rosetta) and faster startup
 
 ```bash
 # macOS (Homebrew)
-brew install yt-dlp ffmpeg
+brew install yt-dlp ffmpeg deno
 ```
 
 ```powershell
 # Windows
 winget install yt-dlp.yt-dlp
 winget install Gyan.FFmpeg
+winget install DenoLand.Deno
 ```
 
 If `ffmpeg` is installed somewhere not on your `PATH`, point the app at it with
@@ -157,9 +159,10 @@ Each binary is ~35 MB. The publish scripts cross-compile, so you can build all
 targets from any one OS.
 
 > **Zero manual prerequisites:** the self-contained build embeds the .NET runtime,
-> and `yt-dlp` + `ffmpeg`/`ffprobe` are auto-downloaded on first run if they aren't
-> already on the user's `PATH` (see [Prerequisites](#prerequisites)). The first run
-> therefore needs network access and will take a little longer while tools download.
+> and `yt-dlp`, `ffmpeg`/`ffprobe`, and `deno` are auto-downloaded on first run if
+> they aren't already on the user's `PATH` (see [Prerequisites](#prerequisites)). The
+> first run therefore needs network access and will take a little longer while tools
+> download.
 
 ### macOS Gatekeeper
 

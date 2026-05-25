@@ -38,6 +38,7 @@ var config = new ExtractorConfig
     YtDlpPath = tools.YtDlp,
     FfmpegPath = tools.Ffmpeg,
     FfprobePath = tools.Ffprobe,
+    DenoPath = tools.Deno,
     MinRequestInterval = TimeSpan.FromMinutes(1),
     LongBreakChance = 0.4,
     MaxRetries = 3
@@ -120,6 +121,8 @@ public class ExtractorConfig
     public string? YtDlpPath { get; set; }
     public string? FfmpegPath { get; set; }
     public string? FfprobePath { get; set; }
+    // JS runtime yt-dlp uses for YouTube extraction (passed as --js-runtimes deno:<path>).
+    public string? DenoPath { get; set; }
     public int MaxRetries { get; set; } = 3;
     public TimeSpan HttpTimeout { get; set; } = TimeSpan.FromMinutes(10);
 }

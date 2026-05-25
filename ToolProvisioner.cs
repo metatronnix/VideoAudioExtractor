@@ -12,7 +12,7 @@ using System.Text.Json;
 // runtime is embedded in the binary, and these tools are fetched on first run.
 public static class ToolProvisioner
 {
-    public record ToolPaths(string YtDlp, string Ffmpeg, string Ffprobe);
+    public record ToolPaths(string YtDlp, string Ffmpeg, string Ffprobe, string Deno);
 
     private static readonly HttpClient Http = new()
     {
@@ -32,8 +32,49 @@ public static class ToolProvisioner
 
         var ytDlp = await EnsureYtDlpAsync(reporter);
         var (ffmpeg, ffprobe) = await EnsureFfmpegAsync(reporter);
+        var deno = await EnsureDenoAsync(reporter);
 
-        return new ToolPaths(ytDlp, ffmpeg, ffprobe);
+        return new ToolPaths(ytDlp, ffmpeg, ffprobe, deno);
+    }
+
+    // ───────────────────────────── Deno (yt-dlp JS runtime) ───────────
+    // Current yt-dlp deprecated YouTube extraction without a JS runtime; Deno is
+    // the runtime it enables by default. A single self-contained binary, so we can
+    // fetch it the same way as the other tools.
+    private static async Task<string> EnsureDenoAsync(IProgressReporter reporter)
+    {
+        var onPath = FindOnPath("deno");
+        if (onPath != null)
+        {
+            reporter.ReportInfo($"deno found on PATH: {onPath}");
+            return onPath;
+        }
+
+        var cached = Path.Combine(ToolsDir, ExeName("deno"));
+        if (File.Exists(cached))
+        {
+            reporter.ReportInfo($"deno found in cache: {cached}");
+            return cached;
+        }
+
+        var asset = DenoAsset();
+        var url = $"https://github.com/denoland/deno/releases/latest/download/{asset}";
+
+        reporter.ReportInfo($"Downloading deno from {url}");
+        await DownloadAndExtractSingleAsync(url, "deno", cached);
+        MakeExecutable(cached);
+        reporter.ReportCompletion($"deno installed: {cached}");
+        return cached;
+    }
+
+    private static string DenoAsset()
+    {
+        var arm64 = RuntimeInformation.OSArchitecture == Architecture.Arm64;
+        if (OperatingSystem.IsWindows())
+            return "deno-x86_64-pc-windows-msvc.zip";
+        if (OperatingSystem.IsMacOS())
+            return arm64 ? "deno-aarch64-apple-darwin.zip" : "deno-x86_64-apple-darwin.zip";
+        return arm64 ? "deno-aarch64-unknown-linux-gnu.zip" : "deno-x86_64-unknown-linux-gnu.zip";
     }
 
     // ───────────────────────────── yt-dlp ─────────────────────────────

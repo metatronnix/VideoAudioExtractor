@@ -133,8 +133,14 @@ public class YouTubeAudioExtractor : IDisposable
         var ua = _userAgents[_random.Next(_userAgents.Length)];
         var outputTemplate = Path.Combine(_config.DefaultOutputDirectory, "%(id)s.%(ext)s");
 
-        var args = new StringBuilder()
-            .Append("-f bestaudio/bestaudio* ")
+        var args = new StringBuilder();
+
+        // Current yt-dlp needs a JS runtime for YouTube extraction. Point it at the
+        // provisioned Deno binary; if it's already on PATH, yt-dlp finds it itself.
+        if (!string.IsNullOrWhiteSpace(_config.DenoPath) && File.Exists(_config.DenoPath))
+            args.Append($"--js-runtimes \"deno:{_config.DenoPath}\" ");
+
+        args.Append("-f bestaudio/bestaudio* ")
             .Append("--extract-audio --audio-format flac --audio-quality 0 ")
             .Append("--postprocessor-args \"ffmpeg:-sample_fmt s32\" ")
             .Append("--add-metadata --embed-metadata ")
