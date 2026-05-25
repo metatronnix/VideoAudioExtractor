@@ -29,6 +29,62 @@ So the only hard requirement depends on how you run the app:
 | From source (`dotnet run`) | [.NET 8 SDK](https://dotnet.microsoft.com/download) |
 | A [self-contained build](#distributable-self-contained-builds) | nothing — the .NET runtime is embedded and the tools auto-download |
 
+## Getting started on macOS
+
+These steps assume you're running from source. The only thing you must install is
+the **.NET 8 SDK**.
+
+### 1. Install Homebrew (if you don't have it)
+
+macOS does not ship with Homebrew. Check first:
+
+```bash
+brew --version
+```
+
+If that says "command not found," install it:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+- **Intel Macs:** Homebrew installs to `/usr/local` and is normally on your `PATH`
+  immediately — just run `brew --version` again to confirm.
+- **Apple Silicon (M-series):** Homebrew installs to `/opt/homebrew`, which is **not**
+  on `PATH` until you add it. Run the two commands the installer prints under
+  "Next steps" (for the default zsh shell):
+
+  ```bash
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+  ```
+
+> **Prefer not to use Homebrew?** Skip straight to the `.pkg` installer in step 2.
+
+### 2. Install the .NET 8 SDK
+
+```bash
+brew install --cask dotnet-sdk
+dotnet --version
+```
+
+Or **without Homebrew**: download the **.NET 8 SDK** installer (`.pkg`) from
+<https://dotnet.microsoft.com/download> — choose **x64** for Intel Macs or **Arm64**
+for Apple Silicon — and run it.
+
+### 3. Clone and run
+
+```bash
+git clone https://github.com/metatronnix/VideoAudioExtractor.git
+cd VideoAudioExtractor
+dotnet run --project VideoAudioExtractor.csproj
+```
+
+On first run the app auto-downloads `yt-dlp`, `ffmpeg`/`ffprobe`, and `deno`. It then
+looks for `~/Audio/youtube_videos.xlsx` (URLs in column A, sheet `Sheet1`) — create
+that file and you're ready. See [Configuration](#configuration) to use a different
+folder and [YouTube cookies](#youtube-cookies-optional) to sign in with your account.
+
 ### Optional: install the tools yourself (recommended)
 
 Auto-download is a convenience fallback. Installing the tools via your package
