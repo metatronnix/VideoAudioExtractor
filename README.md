@@ -61,10 +61,55 @@ Paths are cross-platform and can be overridden with environment variables:
 Inside the audio base directory the app expects:
 
 - `youtube_videos.xlsx` — URLs to download (column A, sheet `Sheet1`)
-- `youtube_cookies.txt` — *optional*; `--cookies` is passed only if this file exists
+- `youtube_cookies.txt` — *optional*; your own YouTube cookies (see
+  [YouTube cookies](#youtube-cookies-optional)). `--cookies` is passed only if this
+  file exists.
 
 Output FLACs are written to a dated subfolder, e.g. `<audio>/2026.05.25/`, and named
 `Artist - Title.flac`.
+
+## YouTube cookies (optional)
+
+Cookies let `yt-dlp` use **your own YouTube login**, which helps with
+age-restricted/members-only videos and avoids "Sign in to confirm you're not a bot"
+errors. Many public videos download fine without it, so this step is optional.
+
+The file is **per-user** — each person supplies their own. It is **not** included in
+the repo (and is git-ignored), so create your own at
+`<audio>/youtube_cookies.txt` (by default `~/Audio/youtube_cookies.txt` on macOS/Linux
+or `C:\Audio\youtube_cookies.txt` on Windows).
+
+> ⚠️ This file contains your active YouTube/Google session — treat it like a password.
+> Never commit it or share it.
+
+**Option A — export with yt-dlp (recommended).** Log into YouTube in your browser,
+then run once (Firefox is the most reliable source; `chrome`, `edge`, `brave`, and
+`safari` also work):
+
+```bash
+# macOS/Linux
+yt-dlp --cookies-from-browser firefox \
+       --cookies ~/Audio/youtube_cookies.txt \
+       --skip-download "https://www.youtube.com"
+```
+
+```powershell
+# Windows (PowerShell)
+yt-dlp --cookies-from-browser firefox `
+       --cookies C:\Audio\youtube_cookies.txt `
+       --skip-download "https://www.youtube.com"
+```
+
+This writes a Netscape-format cookies file to that path. (If you haven't installed
+`yt-dlp` yourself, run the app once first so it auto-downloads, or `brew install yt-dlp`.)
+
+> macOS notes: reading **Safari** cookies requires giving your terminal *Full Disk
+> Access* in System Settings → Privacy & Security; **Chrome** may prompt for Keychain
+> access. **Firefox** generally works without extra permissions.
+
+**Option B — browser extension.** Install a cookies.txt exporter (e.g. "Get
+cookies.txt LOCALLY" for Chrome/Firefox), open YouTube while logged in, export, and
+save the result as `youtube_cookies.txt` in your audio folder.
 
 ## Build & run
 

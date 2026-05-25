@@ -6,6 +6,9 @@
 # Self-contained publish output (see publish.ps1 / publish.sh)
 dist/
 
+# Per-user YouTube cookies — contains a live login session, never commit
+youtube_cookies.txt
+
 # User-specific files
 *.rsuser
 *.suo
